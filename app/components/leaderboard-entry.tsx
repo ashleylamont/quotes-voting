@@ -1,11 +1,23 @@
-import { Quote } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import ReactMarkdown from "react-markdown";
+
+import QuoteGetPayload = Prisma.QuoteGetPayload;
 
 export default function LeaderboardEntry({
   quote,
   rank,
 }: {
-  quote: Quote;
+  quote: QuoteGetPayload<{
+    include: {
+      _count: {
+        select: {
+          wonMatches: true;
+          firstQuoteMatches: true;
+          secondQuoteMatches: true;
+        };
+      };
+    };
+  }>;
   rank: number;
 }) {
   return (
@@ -22,6 +34,11 @@ export default function LeaderboardEntry({
             <p className="text-sm text-gray-300">Quote of {quote.quotee}</p>
             <p className="text-xs text-gray-500">
               {new Date(quote.timestamp).toDateString()}
+            </p>
+            <p className="text-xs text-gray-500">
+              This quote has been picked in {quote._count.wonMatches} out of{" "}
+              {quote._count.firstQuoteMatches + quote._count.secondQuoteMatches}{" "}
+              matches
             </p>
           </div>
         </div>

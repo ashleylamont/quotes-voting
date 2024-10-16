@@ -6,7 +6,17 @@ import LeaderboardEntry from "~/components/leaderboard-entry";
 import { prisma } from "~/db.server";
 
 export async function loader() {
-  const quotes = await prisma.quote.findMany();
+  const quotes = await prisma.quote.findMany({
+    include: {
+      _count: {
+        select: {
+          wonMatches: true,
+          firstQuoteMatches: true,
+          secondQuoteMatches: true,
+        },
+      },
+    },
+  });
   quotes.sort((a, b) => ordinal(b) - ordinal(a));
   const voteCount = await prisma.match.count({
     where: {
