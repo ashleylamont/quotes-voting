@@ -1,7 +1,7 @@
 import { cssBundleHref } from "@remix-run/css-bundle";
-import type { LinksFunction, LoaderFunctionArgs } from "@remix-run/node";
-import { json } from "@remix-run/node";
+import type { LinksFunction } from "@remix-run/node";
 import {
+  Link,
   Links,
   LiveReload,
   Meta,
@@ -10,17 +10,12 @@ import {
   ScrollRestoration,
 } from "@remix-run/react";
 
-import { getUser } from "~/session.server";
 import stylesheet from "~/tailwind.css";
 
 export const links: LinksFunction = () => [
   { rel: "stylesheet", href: stylesheet },
   ...(cssBundleHref ? [{ rel: "stylesheet", href: cssBundleHref }] : []),
 ];
-
-export const loader = async ({ request }: LoaderFunctionArgs) => {
-  return json({ user: await getUser(request) });
-};
 
 export default function App() {
   return (
@@ -31,8 +26,19 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body className="h-full">
-        <Outlet />
+      <body className="flex h-screen flex-col bg-gray-800">
+        <nav className="flex flex-row items-center justify-center gap-8 bg-gray-800 p-4 text-2xl text-white">
+          <strong>CSSA Quotes</strong>
+          <Link to="/leaderboard" className="hover:underline">
+            Leaderboard
+          </Link>
+          <Link to="/vote" className="hover:underline">
+            Vote
+          </Link>
+        </nav>
+        <div className="mx-10 h-full overflow-y-auto p-4">
+          <Outlet />
+        </div>
         <ScrollRestoration />
         <Scripts />
         <LiveReload />

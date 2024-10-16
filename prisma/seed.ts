@@ -1,53 +1,39 @@
-import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
+import {PrismaClient} from "@prisma/client";
+import {rating} from "openskill";
 
 const prisma = new PrismaClient();
 
 async function seed() {
-  const email = "rachel@remix.run";
+  const data: {
+    quotes: { messageId: string; message: string; quotee: string; timestamp: string; }[]
+  } = await fetch("http://localhost:8080/quotes").then((res) => res.json());
 
-  // cleanup the existing database
-  await prisma.user.delete({ where: { email } }).catch(() => {
-    // no worries if it doesn't exist yet
-  });
-
-  const hashedPassword = await bcrypt.hash("racheliscool", 10);
-
-  const user = await prisma.user.create({
-    data: {
-      email,
-      password: {
-        create: {
-          hash: hashedPassword,
-        },
+  for (const quote of data.quotes) {
+    await prisma.quote.upsert({
+      where: { messageId: quote.messageId },
+      update: {
+        message: quote.message,
+        quotee: quote.quotee,
+        timestamp: new Date(quote.timestamp),
       },
-    },
-  });
-
-  await prisma.note.create({
-    data: {
-      title: "My first note",
-      body: "Hello, world!",
-      userId: user.id,
-    },
-  });
-
-  await prisma.note.create({
-    data: {
-      title: "My second note",
-      body: "Hello, world!",
-      userId: user.id,
-    },
-  });
+      create: {
+        messageId: quote.messageId,
+        message: quote.message,
+        quotee: quote.quotee,
+        timestamp: new Date(quote.timestamp),
+        ...rating(),
+      },
+    })
+  }
 
   console.log(`Database has been seeded. 🌱`);
 }
 
 seed()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+    .catch((e) => {
+      console.error(e);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
