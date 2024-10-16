@@ -1,5 +1,5 @@
 {
-  "name": "",
+  "name": "quotes-voting-9340",
   "private": true,
   "sideEffects": false,
   "type": "module",
@@ -8,7 +8,6 @@
     "dev": "remix dev -c \"npm run dev:serve\"",
     "dev:serve": "NODE_OPTIONS=\"--import ./mocks/index.js\" remix-serve ./build/index.js",
     "format": "prettier --write .",
-    "format:repo": "npm run format && npm run lint -- --fix",
     "lint": "eslint --cache --cache-location ./node_modules/.cache/eslint .",
     "setup": "prisma generate && prisma migrate deploy && prisma db seed",
     "start": "remix-serve ./build/index.js",
@@ -76,7 +75,6 @@
     "prisma": "^5.20.0",
     "start-server-and-test": "^2.0.8",
     "tailwindcss": "^3.4.13",
-    "tsx": "^4.19.1",
     "typescript": "^5.6.3",
     "vite": "^5.4.8",
     "vite-tsconfig-paths": "^5.0.1",
@@ -86,6 +84,6 @@
     "node": ">=18.0.0"
   },
   "prisma": {
-    "seed": "tsx prisma/seed.ts"
+    "seed": "bun prisma/seed.ts"
   }
 }
