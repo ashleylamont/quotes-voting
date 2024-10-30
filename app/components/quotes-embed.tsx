@@ -4,7 +4,7 @@ import ReactMarkdown from "react-markdown";
 export default function QuotesEmbed({ quote }: { quote: Quote }) {
   return (
     <button
-      className="flex max-w-2xl flex-1 flex-col justify-between gap-4 overflow-x-auto rounded-md border-l-4 bg-gray-700 p-4 text-left shadow-lg"
+      className="flex flex-1 flex-col justify-between gap-4 overflow-x-auto rounded-md border-l-4 bg-gray-700 p-4 text-left shadow-lg"
       name="winningQuote"
       type="submit"
       value={quote.messageId}
