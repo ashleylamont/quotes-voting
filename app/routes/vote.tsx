@@ -36,16 +36,14 @@ export default function Vote() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-2 p-4">
       <h1 className="text-2xl text-white">Vote for your favourite quote</h1>
-      <div className="container mx-auto">
-        <Form
-          className="flex flex-col gap-6 md:flex-row"
-          action="/vote"
-          method="post"
-        >
-          <QuotesEmbed quote={firstQuote} />
-          <QuotesEmbed quote={secondQuote} />
-        </Form>
-      </div>
+      <Form
+        className="container grid grid-cols-1 gap-6 lg:grid-cols-2"
+        action="/vote"
+        method="post"
+      >
+        <QuotesEmbed quote={firstQuote} />
+        <QuotesEmbed quote={secondQuote} />
+      </Form>
     </div>
   );
 }
