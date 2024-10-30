@@ -28,6 +28,8 @@ export async function fetchQuotesIfStale(): Promise<void> {
       }[];
     } = await fetch("http://localhost:8080/quotes").then((res) => res.json());
 
+    console.log(`Fetched ${data.quotes.length} quotes from the API`);
+
     // Upsert the quotes
     for (const quote of data.quotes) {
       await prisma.quote.upsert({
