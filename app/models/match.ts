@@ -4,8 +4,10 @@ import { ActionFunction, json, redirect } from "@remix-run/router";
 import { predictDraw, rate, rating } from "openskill";
 
 import { prisma } from "~/db.server";
+import { fetchQuotesIfStale } from "~/models/quote";
 
 import MatchGetPayload = Prisma.MatchGetPayload;
+import QuoteGetPayload = Prisma.QuoteGetPayload;
 
 export const sessionStore = createCookieSessionStorage({
   cookie: {
@@ -19,30 +21,68 @@ export const sessionStore = createCookieSessionStorage({
   },
 });
 
-async function getRandomPairAndDrawPrediction(): Promise<
-  [Quote, Quote, number]
-> {
-  const quotes = await prisma.quote.findMany();
+function matchQuality(
+  quoteA: QuoteGetPayload<{
+    include: {
+      _count: { select: { firstQuoteMatches: true; secondQuoteMatches: true } };
+    };
+  }>,
+  quoteB: QuoteGetPayload<{
+    include: {
+      _count: { select: { firstQuoteMatches: true; secondQuoteMatches: true } };
+    };
+  }>,
+  averageMatchCount: number,
+): number {
+  const quoteARating = rating({
+    mu: quoteA.mu,
+    sigma: quoteA.sigma,
+  });
+  const quoteBRating = rating({
+    mu: quoteB.mu,
+    sigma: quoteB.sigma,
+  });
+  const quoteAMatchCount =
+    quoteA._count.firstQuoteMatches + quoteA._count.secondQuoteMatches;
+  const quoteBMatchCount =
+    quoteB._count.firstQuoteMatches + quoteB._count.secondQuoteMatches;
+
+  const drawChance = predictDraw([[quoteARating], [quoteBRating]]);
+
+  const matchCountAverage = (quoteAMatchCount + quoteBMatchCount) / 2;
+  // The match count score is a flipped logistic function that gives a score between 0 and 1
+  const matchCountScore =
+    1 / (1 + Math.exp(0.5 * (matchCountAverage - averageMatchCount)));
+
+  const matchCountWeight = 0.5;
+  const drawWeight = 0.5;
+  if (matchCountWeight + drawWeight - 1 > 1e-6) {
+    throw new Error("Weights must sum to 1");
+  }
+  return matchCountWeight * matchCountScore + drawWeight * drawChance;
+}
+
+async function getRandomPairAndQualityScore(): Promise<[Quote, Quote, number]> {
+  fetchQuotesIfStale().catch(console.error);
+  const quotes = await prisma.quote.findMany({
+    include: {
+      _count: {
+        select: {
+          firstQuoteMatches: true,
+          secondQuoteMatches: true,
+        },
+      },
+    },
+  });
+  const matchCount = await prisma.match.count();
+  const averageMatchCount = matchCount / quotes.length;
   const quoteA = quotes[Math.floor(Math.random() * quotes.length)];
   quotes.splice(quotes.indexOf(quoteA), 1);
   const quoteB = quotes[Math.floor(Math.random() * quotes.length)];
 
-  const prediction = predictDraw([
-    [
-      rating({
-        mu: quoteA.mu,
-        sigma: quoteA.sigma,
-      }),
-    ],
-    [
-      rating({
-        mu: quoteB.mu,
-        sigma: quoteB.sigma,
-      }),
-    ],
-  ]);
+  const matchQualityScore = matchQuality(quoteA, quoteB, averageMatchCount);
 
-  return [quoteA, quoteB, prediction];
+  return [quoteA, quoteB, matchQualityScore];
 }
 
 export async function getOrCreateMatch(request: Request): Promise<
@@ -69,13 +109,9 @@ export async function getOrCreateMatch(request: Request): Promise<
     return [existingMatch, session];
   }
 
-  const pairOptions = await Promise.all([
-    getRandomPairAndDrawPrediction(),
-    getRandomPairAndDrawPrediction(),
-    getRandomPairAndDrawPrediction(),
-    getRandomPairAndDrawPrediction(),
-    getRandomPairAndDrawPrediction(),
-  ]);
+  const pairOptions = await Promise.all(
+    Array.from({ length: 10 }, () => getRandomPairAndQualityScore()),
+  );
 
   let bestPair = pairOptions[0];
   for (const pair of pairOptions) {
