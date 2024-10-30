@@ -63,7 +63,6 @@ function matchQuality(
 }
 
 async function getRandomPairAndQualityScore(): Promise<[Quote, Quote, number]> {
-  fetchQuotesIfStale().catch(console.error);
   const quotes = await prisma.quote.findMany({
     include: {
       _count: {
@@ -93,6 +92,7 @@ export async function getOrCreateMatch(request: Request): Promise<
     Session,
   ]
 > {
+  fetchQuotesIfStale().catch(console.error);
   const session = await sessionStore.getSession(request.headers.get("Cookie"));
 
   const existingMatchId = session.get("matchId");

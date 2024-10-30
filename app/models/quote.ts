@@ -8,9 +8,13 @@ const quoteFetchTimer = singleton("quoteFetchTimer", () => ({
 }));
 
 export async function fetchQuotesIfStale(): Promise<void> {
+  console.log("Checking if quotes are stale...");
   const fetchEvery = 1000 * 60 * 5; // 5 minutes
   const now = Date.now();
-  if (now - quoteFetchTimer.lastFetched > fetchEvery) {
+  const timeSinceLastFetch = now - quoteFetchTimer.lastFetched;
+  console.log(`Time since last fetch: ${timeSinceLastFetch / 1000} seconds`);
+  if (timeSinceLastFetch > fetchEvery) {
+    console.log("Fetching quotes...");
     // Fetch the quotes
     quoteFetchTimer.lastFetched = now;
 
